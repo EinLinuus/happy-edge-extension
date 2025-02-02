@@ -4,7 +4,6 @@ let tabSwitchTimeout = null;
 let tabSwitchCount = 0;
 
 chrome.tabs.onActivated.addListener((activeInfo) => {
-	console.log("onActivated", activeInfo, recentTabs);
 	if(tabSwitchTimeout) {
 		return;
 	}
@@ -26,6 +25,11 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 
 	// add the tab to the end of the recentTabs array
 	recentTabs.push(activeInfo.tabId);
+
+	// Limit the recentTabs array to 10 items
+	if(recentTabs.length > 10) {
+		recentTabs.shift();
+	}
 });
 
 chrome.commands.onCommand.addListener((command) => {
@@ -35,7 +39,6 @@ chrome.commands.onCommand.addListener((command) => {
 });
 
 function switchToLastTab() {
-	console.log("switching...", recentTabs);
 	if(tabSwitchTimeout) {
 		clearTimeout(tabSwitchTimeout);
 	}
@@ -45,19 +48,27 @@ function switchToLastTab() {
 	setTimeout(() => {
 		tabSwitchTimeout = null;
 
-		console.log("Running action for tabSwitchCount", tabSwitchCount);
 		if(recentTabs.length >= 1 + tabSwitchCount) {
-			chrome.tabs.update(recentTabs[recentTabs.length - 1 - tabSwitchCount], { active: true });
+			switchToLastTabOffset(tabSwitchCount);
 		}
 
 		// Reset
 		tabSwitchCount = 0;
 	}, tabSwitchDelay);
-
-	return;
-
-	// old
-	if(recentTabs.length >= 2) {
-		chrome.tabs.update(recentTabs[recentTabs.length - 2], { active: true });
-	}
 }
+
+function switchToLastTabOffset(offset = 1) {
+	chrome.tabs.update(recentTabs[recentTabs.length - 1 - offset], { active: true });
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === "switch_recent_tab") {
+		const offset = message.offset || 1;
+		switchToLastTabOffset(offset);
+    } else if(message.action === "get_recent_tabs") {
+		chrome.runtime.sendMessage({
+			action: "get_recent_tabs",
+			recentTabs,
+		});
+	}
+});

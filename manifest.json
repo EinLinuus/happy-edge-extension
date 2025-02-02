@@ -10,5 +10,13 @@
       "suggested_key": { "default": "Alt+Tab" },
       "description": "Switch to the most recent tab"
     }
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "popup-icon-16.png",
+      "48": "popup-icon-48.png",
+      "128": "popup-icon.png"
+    }
   }
 }
